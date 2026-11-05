@@ -1,0 +1,78 @@
+# Example Render blueprint (two services). REFERENCE ONLY.
+#
+# - A blueprint applies to an EXISTING service only if the NAME matches; otherwise Render creates new services. If you
+#   created your services by hand, copy these rules and headers into each dashboard instead.
+# - Variables with `sync: false` carry no value here: Render asks for them. NEVER write secrets in this file.
+# - Keep any "allow indexing" switch UNSET until launch day. Keep testing-only variables out of production.
+# - Replace every <PLACEHOLDER>. Check names, region and the public API address (marked CONFIRM).
+
+services:
+  - type: web
+    runtime: node
+    name: <app>-api            # CONFIRM
+    plan: free                 # move to a paid plan before real traffic
+    buildCommand: npm ci --include=dev && npm run build -w packages/shared && npm run build -w apps/api
+    startCommand: node apps/api/dist/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY_HOPS
+        value: '1'             # measure first; see the real-IP reference
+      - key: MONGODB_URI
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: SIGNING_SECRET      # long-lived: back it up offline
+        sync: false
+
+  - type: web
+    runtime: static
+    name: <app>-web            # CONFIRM
+    buildCommand: npm ci --include=dev && npm run build -w packages/shared && npm run build -w apps/web
+    staticPublishPath: apps/web/dist
+    envVars:
+      - key: VITE_SITE_URL
+        value: https://<your-domain>
+    routes:
+      # Order matters. No catch-all: only real app routes get index.html; the rest gets 404.html with status 404.
+      - type: rewrite
+        source: /api/*
+        destination: https://<app>-api.onrender.com/api/*   # CONFIRM
+      - type: rewrite
+        source: /sitemap.xml
+        destination: https://<app>-api.onrender.com/api/sitemap.xml
+      # One rule per route in your route list (add a test that compares them):
+      - type: rewrite
+        source: /login
+        destination: /index.html
+      - type: rewrite
+        source: /account/*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(), payment=()
+      # Start report-only; compute the real value from the build output.
+      - path: /*
+        name: Content-Security-Policy-Report-Only
+        value: "default-src 'self'; report-uri /api/csp-report"
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
