@@ -22,11 +22,13 @@ production-readiness/
     08-mistakes-we-made.md
     09-when-to-ask-a-professional.md
   templates/
-    adr-template.md  legal-markers.md  network-check.md  render.yaml.example
+    audit-report.md  adr-template.md  legal-markers.md  network-check.md  render.yaml.example
 ```
 
 Highlights
 
+- **You choose the scope:** at the start the agent asks whether you want a full check of everything, only the phases you pick, or one specific task.
+- **Audit first, then ask:** within that scope, the agent first checks, read-only, what your app already has (`Present` / `Partial` / `Missing`, with file-and-line evidence) and only implements what you choose, phase by phase, because building costs far more time and tokens than checking.
 - **Measure, don't assume:** how to find the real client IP behind proxies before trusting rate limits.
 - **Privacy by construction:** age gate that stores nothing about people below the minimum, separate consents, logs that never contain IPs.
 - **Honest drafts:** `[PLACEHOLDER]` (owner facts) and `[PROPOSAL]` (reviewed by a professional) markers instead of invented legal text.
@@ -46,9 +48,10 @@ Then ask your agent to use the `production-readiness` skill when you prepare a l
 ## Using it well
 
 1. Tell the agent your jurisdiction, audience (minors? payments? sensitive data?) and hosting.
-2. Work phase by phase and stop at each review point.
-3. Never let the agent push, deploy or change cloud consoles without your explicit order.
-4. Keep secrets in a password manager. Do not paste them into chat.
+2. Read the audit report before anything is built, and decide per phase: stop at the report, fix only the high-risk gaps, or implement everything missing.
+3. Work phase by phase and stop at each review point.
+4. Never let the agent push, deploy or change cloud consoles without your explicit order.
+5. Keep secrets in a password manager. Do not paste them into chat.
 
 ## Español
 
